@@ -1,7 +1,7 @@
 import orcastr
 import networkx as nx
 
-def motif_counts(task, size, graph):
+def orbit_counts(task, size, graph):
     graph = nx.convert_node_labels_to_integers(graph)
     s = "{} {}\n".format(len(graph), len(graph.edges))
     for u, v in graph.edges:
