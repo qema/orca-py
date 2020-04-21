@@ -3,7 +3,7 @@
 char motif_count_func_docs[] = "Count motifs";
 
 PyMethodDef orca_funcs[] = {
-	{	"motif_counts",
+	{	"motif_counts_str",
 		(PyCFunction)motif_counts_wrap,
 		METH_VARARGS,
 		motif_count_func_docs},
@@ -14,7 +14,7 @@ char orcamod_docs[] = "orca module";
 
 PyModuleDef orca_mod = {
 	PyModuleDef_HEAD_INIT,
-	"orca",
+	"orcastr",
 	orcamod_docs,
 	-1,
 	orca_funcs,
@@ -24,6 +24,6 @@ PyModuleDef orca_mod = {
 	NULL
 };
 
-PyMODINIT_FUNC PyInit_orca(void) {
+PyMODINIT_FUNC PyInit_orcastr(void) {
 	return PyModule_Create(&orca_mod);
 }
