@@ -1,3 +1,4 @@
+#include "Python.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -5,12 +6,12 @@
 #include <ctime>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <set>
 #include <sstream>
 #include <unordered_map>
 #include <algorithm>
 
-#include <Python.h>
 using namespace std;
 
 typedef long long int64;
@@ -232,6 +233,12 @@ void count4() {
 
     endTime_all = endTime;
     //printf("total: %.2f\n", (double)(endTime_all-startTime_all)/CLOCKS_PER_SEC);
+
+    free(tri);
+    free(C4);
+    free(neigh);
+    free(common);
+    free(common_list);
 }
 
 
@@ -426,6 +433,14 @@ void ecount4() {
 
     endTime_all = endTime;
     //printf("total: %.2f\n", (double)(endTime_all-startTime_all)/CLOCKS_PER_SEC);
+
+    free(tri);
+    free(C4);
+    free(neighx);
+    free(neigh);
+    free(neigh_edges);
+    free(common);
+    free(common_list);
 }
 
 
@@ -837,6 +852,15 @@ void count5() {
 
     endTime_all = endTime;
     //printf("total: %.2f sec\n", (double)(endTime_all-startTime_all)/CLOCKS_PER_SEC);
+
+    free(tri);
+    free(C5);
+    free(neigh);
+    free(neigh2);
+    free(common_x);
+    free(common_x_list);
+    free(common_a);
+    free(common_a_list);
 }
 
 
@@ -1336,6 +1360,18 @@ void ecount5() {
 
     endTime_all = endTime;
     //printf("total: %.2f\n", (double)(endTime_all-startTime_all)/CLOCKS_PER_SEC);
+
+    free(tri);
+    free(C5);
+    free(neighx);
+    free(neigh);
+    free(neigh2);
+    free(neigh_edges);
+    free(neigh2_edges);
+    free(common_x);
+    free(common_x_list);
+    free(common_y);
+    free(common_y_list);
 } 
 
 int writeResults(int g, const char* output_filename) {
@@ -1402,8 +1438,10 @@ string writeEdgeResultsString(int g) {
 }
 
 int motif_counts(const char* orbit_type, int graphlet_size, 
-        const char* input_filename, const char* output_filename, string &out_str) {
-    fstream fin; // input and output files
+        const char* input_str, const char* output_filename, string &out_str) {
+    bool use_adj_matrix;
+    //fstream fin; // input and output files
+    stringstream fin(input_str);
     // open input, output files
     if (strcmp(orbit_type, "node")!=0 && strcmp(orbit_type, "edge")!=0) {
         cerr << "Incorrect orbit type '" << orbit_type << "'. Should be 'node' or 'edge'." << endl;
@@ -1413,9 +1451,10 @@ int motif_counts(const char* orbit_type, int graphlet_size,
         cerr << "Incorrect graphlet size " << graphlet_size << ". Should be 4 or 5." << endl;
         return 0;
     }
-    fin.open(input_filename, fstream::in);
+    //fin.open(input_filename, fstream::in);
     if (fin.fail()) {
-        cerr << "Failed to open file " << input_filename << endl;
+        //cerr << "Failed to open file " << input_filename << endl;
+        cerr << "Failed to open string stream" << endl;
         return 0;
     }
     // read input graph
@@ -1427,7 +1466,7 @@ int motif_counts(const char* orbit_type, int graphlet_size,
         int a,b;
         fin >> a >> b;
         if (!(0<=a && a<n) || !(0<=b && b<n)) {
-            cerr << "Node ids should be between 0 and n-1." << endl;
+            cerr << "Node ids should be between 1 and n-1." << endl;
             return 0;
         }
         if (a==b) {
@@ -1441,13 +1480,14 @@ int motif_counts(const char* orbit_type, int graphlet_size,
     //printf("nodes: %d\n",n);
     //printf("edges: %d\n",m);
     //printf("max degree: %d\n",d_max);
-    fin.close();
+    //fin.close();
     if ((int)(set<PAIR>(edges,edges+m).size())!=m) {
         cerr << "Input file contains duplicate undirected edges." << endl;
         return 0;
     }
     // set up adjacency matrix if it's smaller than 100MB
     if ((int64)n*n < 100LL*1024*1024*8) {
+        use_adj_matrix = true;
         adjacent = adjacent_matrix;
         adj_matrix = (int*)calloc((n*n)/adj_chunk+1,sizeof(int));
         for (int i=0;i<m;i++) {
@@ -1456,6 +1496,7 @@ int motif_counts(const char* orbit_type, int graphlet_size,
             adj_matrix[(b*n+a)/adj_chunk]|=(1<<((b*n+a)%adj_chunk));
         }
     } else {
+        use_adj_matrix = false;
         adjacent = adjacent_list;
     }
     // set up adjacency, incidence lists
@@ -1488,7 +1529,8 @@ int motif_counts(const char* orbit_type, int graphlet_size,
         if (strcmp(output_filename, "std") == 0) {
             cout << "orbit counts: \n" << writeResultsString(graphlet_size) << endl;
         } else {
-            out_str = writeResults(graphlet_size, output_filename);
+            //out_str = writeResults(graphlet_size, output_filename);
+            out_str = writeResultsString(graphlet_size);
         }
     } else {
         //printf("Counting EDGE orbits of graphlets on %d nodes.\n\n",graphlet_size);
@@ -1497,55 +1539,72 @@ int motif_counts(const char* orbit_type, int graphlet_size,
         if (strcmp(output_filename, "std") == 0) {
             cout << "orbit counts: \n" << writeEdgeResultsString(graphlet_size) << endl;
         } else {
-            out_str = writeEdgeResults(graphlet_size, output_filename);
+            //out_str = writeEdgeResults(graphlet_size, output_filename);
+            out_str = writeEdgeResultsString(graphlet_size);
         }
     }
 
+    free(edges);
+    free(deg);
+    free(d);
+    if (use_adj_matrix) {
+        free(adj_matrix);
+    } else {
+        for (int i=0;i<n;i++) free(adj[i]);
+        free(adj);
+    }
+    for (int i=0;i<n;i++) free(inc[i]);
+    free(inc);
+    for (int i=0;i<n;i++) free(orbit[i]);
+    free(orbit);
+    for (int i=0;i<m;i++) free(eorbit[i]);
+    free(eorbit);
     return 1;
 }
 
 PyObject * motif_counts_wrap(PyObject *self, PyObject *args) {
     //(const char* orbit_type, int graphlet_size, 
     //    const char* input_filename, const char* output_filename, string &out_str)
-    char *orbit_type, *input_filename, *output_filename;
+    char *orbit_type, *input_filename;//, *output_filename;
 	int graphlet_size;
 
-	if(!PyArg_ParseTuple(args, "siss", &orbit_type, &graphlet_size,
-                &input_filename, &output_filename))
+	if(!PyArg_ParseTuple(args, "sis", &orbit_type, &graphlet_size,
+                &input_filename))
 		return NULL;
 
 	//sprintf(eq, "%d + %d", num1, num2);
-    string out;
-    motif_counts(orbit_type, graphlet_size, input_filename, output_filename, out);
+    static string out;
+    motif_counts(orbit_type, graphlet_size, input_filename, "", out);
 
 	//return Py_BuildValue("is", num1 + num2, eq);
-	return PyUnicode_FromFormat("done");
+	return PyUnicode_FromString(out.c_str());
 }
 
-//int init(int argc, char *argv[]) {
-//    if (argc!=5) {
-//        cerr << "Incorrect number of arguments." << endl;
-//        cerr << "Usage: orca.exe [orbit type: node|edge] [graphlet size: 4/5] [graph - input file] [graphlets - output file]" << endl;
-//        return 0;
-//    }
-//    int graphlet_size;
-//    sscanf(argv[2],"%d", &graphlet_size);
-//    string out;
-//    motif_counts(argv[1], graphlet_size, argv[3], argv[4], out);
-//
-//    return 1;
-//}
-//
-//
-//int main(int argc, char *argv[]) {
-//
-//
-//    if (!init(argc, argv)) {
-////        cerr << "Stopping!" << endl;
-//        return 1;
-//    }
-//    
-//
-//    return 0;
-//}
+
+int init(int argc, char *argv[]) {
+    if (argc!=5) {
+        cerr << "Incorrect number of arguments." << endl;
+        cerr << "Usage: orca.exe [orbit type: node|edge] [graphlet size: 4/5] [graph - input file] [graphlets - output file]" << endl;
+        return 0;
+    }
+    int graphlet_size;
+    sscanf(argv[2],"%d", &graphlet_size);
+    string out;
+    motif_counts(argv[1], graphlet_size, argv[3], argv[4], out);
+
+    return 1;
+}
+
+
+int main(int argc, char *argv[]) {
+
+
+    if (!init(argc, argv)) {
+//        cerr << "Stopping!" << endl;
+        return 1;
+    }
+    
+
+    return 0;
+}
 
