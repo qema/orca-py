@@ -1439,6 +1439,8 @@ string writeEdgeResultsString(int g) {
 
 int motif_counts(const char* orbit_type, int graphlet_size, 
         const char* input_str, const char* output_filename, string &out_str) {
+    common2.clear();
+    common3.clear();
     bool use_adj_matrix;
     //fstream fin; // input and output files
     stringstream fin(input_str);
@@ -1459,6 +1461,7 @@ int motif_counts(const char* orbit_type, int graphlet_size,
     }
     // read input graph
     fin >> n >> m;
+    //cout << n << " " << m;
     int d_max=0;
     edges = (PAIR*)malloc(m*sizeof(PAIR));
     deg = (int*)calloc(n,sizeof(int));
