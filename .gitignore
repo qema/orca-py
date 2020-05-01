@@ -2,3 +2,4 @@
 *.egg-info
 *.txt
 build/
+**__pycache__
